@@ -33,11 +33,14 @@ export async function POST(req: NextRequest) {
     const variants: ContentVariants = await repurposeArticle(content)
 
     // Save article and variants to database
-    const articleRes = await fetch(`${POSTGREST_URL}/rest/v1/articles`, {
+    const anonKey = process.env.POSTGREST_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneXZxbnBienF3bnVsd21jcmxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjM2NjMsImV4cCI6MjA2NjE5OTY2M30.WLCWOlh2YpU3avjq_lSkLyf8hWW0yrWfIN9BkCpRIVw'
+    
+    const articleRes = await fetch(`${POSTGREST_URL}/rest/v1/sr_articles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.POSTGREST_ANON_KEY}`,
+        Authorization: `Bearer ${anonKey}`,
+        'apikey': anonKey,
       },
       body: JSON.stringify({
         user_id: user.userId,
@@ -52,11 +55,12 @@ export async function POST(req: NextRequest) {
 
     // Save variants
     if (articleId) {
-      await fetch(`${POSTGREST_URL}/rest/v1/variants`, {
+      await fetch(`${POSTGREST_URL}/rest/v1/sr_variants`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.POSTGREST_ANON_KEY}`,
+          Authorization: `Bearer ${anonKey}`,
+          'apikey': anonKey,
         },
         body: JSON.stringify({
           article_id: articleId,

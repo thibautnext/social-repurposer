@@ -18,11 +18,12 @@ export async function POST(req: NextRequest) {
 
     // Get user from database
     const response = await fetch(
-      `${POSTGREST_URL}/rest/v1/users?email=eq.${encodeURIComponent(email)}`,
+      `${POSTGREST_URL}/rest/v1/sr_users?email=eq.${encodeURIComponent(email)}`,
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.POSTGREST_ANON_KEY}`,
+          Authorization: `Bearer ${process.env.POSTGREST_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneXZxbnBienF3bnVsd21jcmxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjM2NjMsImV4cCI6MjA2NjE5OTY2M30.WLCWOlh2YpU3avjq_lSkLyf8hWW0yrWfIN9BkCpRIVw'}`,
+          'apikey': `${process.env.POSTGREST_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneXZxbnBienF3bnVsd21jcmxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjM2NjMsImV4cCI6MjA2NjE5OTY2M30.WLCWOlh2YpU3avjq_lSkLyf8hWW0yrWfIN9BkCpRIVw'}`,
         },
       }
     )
