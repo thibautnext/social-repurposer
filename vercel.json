@@ -1,12 +1,4 @@
 {
-  "env": {
-    "ANTHROPIC_API_KEY": "@anthropic_api_key",
-    "JWT_SECRET": "@jwt_secret",
-    "POSTGREST_URL": "@postgrest_url",
-    "POSTGREST_ANON_KEY": "@postgrest_anon_key",
-    "STRIPE_PUBLIC_KEY": "@stripe_public_key",
-    "STRIPE_SECRET_KEY": "@stripe_secret_key"
-  },
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install"
