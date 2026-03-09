@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { Pool } from 'pg'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key'
-const POSTGREST_URL = process.env.POSTGREST_URL || 'https://supabase.novalys.io'
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+})
 
 export async function POST(req: NextRequest) {
+  const client = await pool.connect()
   try {
     const { email, password } = await req.json()
 
@@ -17,30 +23,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user from database
-    const response = await fetch(
-      `${POSTGREST_URL}/rest/v1/sr_users?email=eq.${encodeURIComponent(email)}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.POSTGREST_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneXZxbnBienF3bnVsd21jcmxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjM2NjMsImV4cCI6MjA2NjE5OTY2M30.WLCWOlh2YpU3avjq_lSkLyf8hWW0yrWfIN9BkCpRIVw'}`,
-          'apikey': `${process.env.POSTGREST_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneXZxbnBienF3bnVsd21jcmxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjM2NjMsImV4cCI6MjA2NjE5OTY2M30.WLCWOlh2YpU3avjq_lSkLyf8hWW0yrWfIN9BkCpRIVw'}`,
-        },
-      }
+    const result = await client.query(
+      'SELECT id, email, password_hash FROM sr_users WHERE email = $1',
+      [email]
     )
 
-    if (!response.ok) {
-      throw new Error('User not found')
-    }
-
-    const users = await response.json()
-    if (users.length === 0) {
+    if (result.rows.length === 0) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    const user = users[0]
+    const user = result.rows[0]
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password_hash)
@@ -60,9 +55,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ token, user: { id: user.id, email: user.email } })
   } catch (error) {
+    console.error('Login error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
+  } finally {
+    client.release()
   }
 }

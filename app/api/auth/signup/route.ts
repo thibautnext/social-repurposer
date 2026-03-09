@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { Pool } from 'pg'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key'
-const POSTGREST_URL = process.env.POSTGREST_URL || 'https://supabase.novalys.io'
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+})
 
 export async function POST(req: NextRequest) {
+  const client = await pool.connect()
   try {
     const { email, password } = await req.json()
 
@@ -19,39 +25,33 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Insert user into database via PostgREST
-    const response = await fetch(`${POSTGREST_URL}/rest/v1/sr_users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.POSTGREST_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneXZxbnBienF3bnVsd21jcmxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjM2NjMsImV4cCI6MjA2NjE5OTY2M30.WLCWOlh2YpU3avjq_lSkLyf8hWW0yrWfIN9BkCpRIVw'}`,
-        'apikey': `${process.env.POSTGREST_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneXZxbnBienF3bnVsd21jcmxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjM2NjMsImV4cCI6MjA2NjE5OTY2M30.WLCWOlh2YpU3avjq_lSkLyf8hWW0yrWfIN9BkCpRIVw'}`,
-      },
-      body: JSON.stringify({
-        email,
-        password_hash: hashedPassword,
-        created_at: new Date().toISOString(),
-      }),
-    })
+    // Insert user into database
+    const result = await client.query(
+      'INSERT INTO sr_users (email, password_hash, created_at, updated_at) VALUES ($1, $2, NOW(), NOW()) RETURNING id, email',
+      [email, hashedPassword]
+    )
 
-    if (!response.ok) {
+    if (!result.rows.length) {
       throw new Error('Failed to create user')
     }
 
-    const user = await response.json()
+    const user = result.rows[0]
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user[0]?.id, email: user[0]?.email, role: 'app_user' },
+      { userId: user.id, email: user.email, role: 'app_user' },
       JWT_SECRET,
       { expiresIn: '30d' }
     )
 
-    return NextResponse.json({ token, user: { id: user[0]?.id, email: user[0]?.email } })
+    return NextResponse.json({ token, user: { id: user.id, email: user.email } })
   } catch (error) {
+    console.error('Signup error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
+  } finally {
+    client.release()
   }
 }
