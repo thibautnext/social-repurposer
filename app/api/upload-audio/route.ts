@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyRequestToken } from '@/lib/auth'
-import { isValidAudioFormat } from '@/lib/ffmpeg'
+import { validateFileSize, validateAudioFormat, ErrorMessages } from '@/lib/errors'
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { v4 as uuidv4 } from 'uuid'
 import * as path from 'path'
 
 const UPLOAD_DIR = '/tmp/social-repurposer-uploads'
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
 export async function POST(req: NextRequest) {
   try {
     // Verify authentication
     const user = verifyRequestToken(req)
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: ErrorMessages.UNAUTHORIZED, code: 'UNAUTHORIZED' },
+        { status: 401 }
+      )
     }
 
     // Parse multipart form data
@@ -23,23 +25,25 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json(
-        { error: 'No file provided' },
+        { error: 'No file provided', code: 'NO_FILE' },
         { status: 400 }
       )
     }
 
     // Validate file type
-    if (!isValidAudioFormat(file.name)) {
+    const formatCheck = validateAudioFormat(file.name)
+    if (!formatCheck.valid) {
       return NextResponse.json(
-        { error: 'Invalid file type. Supported: .mp3, .wav, .m4a, .ogg, .flac, .aac' },
+        { error: formatCheck.error, code: 'INVALID_FORMAT' },
         { status: 400 }
       )
     }
 
     // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
+    const sizeCheck = validateFileSize(file.size, 'audio')
+    if (!sizeCheck.valid) {
       return NextResponse.json(
-        { error: 'File too large. Maximum size: 50MB (~1 hour of audio)' },
+        { error: sizeCheck.error, code: 'FILE_TOO_LARGE' },
         { status: 400 }
       )
     }
