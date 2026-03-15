@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${anonKey}`,
         'apikey': anonKey,
+        'Prefer': 'return=representation',
       },
       body: JSON.stringify({
         user_id: user.userId,
@@ -50,8 +51,13 @@ export async function POST(req: NextRequest) {
       }),
     })
 
-    const articles = await articleRes.json()
-    const articleId = articles[0]?.id
+    let articleId = null
+    if (articleRes.ok) {
+      const articles = await articleRes.json()
+      articleId = articles[0]?.id
+    } else {
+      console.error('Failed to save article:', await articleRes.text())
+    }
 
     // Save variants
     if (articleId) {
@@ -61,6 +67,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${anonKey}`,
           'apikey': anonKey,
+          'Prefer': 'return=representation',
         },
         body: JSON.stringify({
           article_id: articleId,
