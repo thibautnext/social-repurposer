@@ -67,7 +67,7 @@ export async function repurposeArticle(content: string): Promise<ContentVariants
   try {
     // Twitter Thread (10 tweets)
     const twitterResponse = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
       messages: [
         {
@@ -86,7 +86,7 @@ export async function repurposeArticle(content: string): Promise<ContentVariants
 
     // LinkedIn Post
     const linkedinResponse = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       messages: [
         {
@@ -103,7 +103,7 @@ export async function repurposeArticle(content: string): Promise<ContentVariants
 
     // TikTok Script
     const tiktokResponse = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 300,
       messages: [
         {
@@ -120,7 +120,7 @@ export async function repurposeArticle(content: string): Promise<ContentVariants
 
     // Instagram Captions (3 variants)
     const instagramResponse = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 600,
       messages: [
         {
@@ -138,7 +138,7 @@ export async function repurposeArticle(content: string): Promise<ContentVariants
 
     // Facebook Post
     const facebookResponse = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 400,
       messages: [
         {
@@ -155,7 +155,7 @@ export async function repurposeArticle(content: string): Promise<ContentVariants
 
     // Email Newsletter
     const emailResponse = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 600,
       messages: [
         {
